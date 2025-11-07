@@ -1,7 +1,6 @@
 # Neural-Signal-Dynamics
 This project investigates how the brain encodes and processes sensory information through the analysis of electrophysiological recordings. It focuses on understanding neural activity at both the single-neuron and population levels using modern computational and information-theoretic methods.
 
----
 
 ## 📘 Overview
 
@@ -37,10 +36,10 @@ The repository is structured into modular stages. Each stage can be run independ
 
 ### 1️⃣ Signal Preprocessing and Spike Sorting
 
-#### **Objective:**  
+**Objective:**  
 Extract and isolate single-neuron spike trains from extracellular voltage recordings.
 
-#### **Steps:**
+**Steps:**
 
 1. **Filtering**  
    - Apply a 7th-order Butterworth bandpass filter (300–3000 Hz) using `scipy.signal.filtfilt`.  
@@ -48,71 +47,64 @@ Extract and isolate single-neuron spike trains from extracellular voltage record
 
 2. **Spike Detection**  
    - Threshold computed using median-based noise estimation:  
-     \[
-     \theta = 5 \sigma_n, \quad \sigma_n = \frac{\text{median}(|x|)}{0.6745}
-     \]  
-   - Spikes are detected as peaks exceeding θ.
+     - sigma_n = median(|x|) / 0.6745  
+     - theta = 5 * sigma_n  
+   - Spikes are detected as peaks exceeding theta.
 
 3. **Waveform Extraction**  
    - Extract ±2 ms windows around each detected spike peak.  
    - Store as rows in a waveform matrix for feature extraction.
 
 4. **Feature Extraction (PCA / t-SNE)**  
-   - Principal Component Analysis (PCA) is applied to reduce waveform dimensionality.  
-   - Alternatively, **t-SNE** can be used for nonlinear feature mapping.
+   - Apply Principal Component Analysis (PCA) to reduce waveform dimensionality.  
+   - Alternatively, use **t-SNE** for nonlinear feature mapping.
 
 5. **Clustering**  
    - Use **K-Means**, **GMM**, or mixture-of-t models to cluster waveforms.  
    - Clusters correspond to putative single units.
 
 6. **Validation**  
-   - Compare detected spikes to ground-truth annotations (if available) using performance metrics (precision, recall, or correlation).
+   - Compare detected spikes to ground-truth annotations (if available) using performance metrics such as precision, recall, or correlation.
 
 ---
 
 ### 2️⃣ Single-Neuron Analysis
 
-#### **Peri-Stimulus Time Histogram (PSTH)**
+**Peri-Stimulus Time Histogram (PSTH)**  
 - Compute average firing rate across trials for each stimulus category.  
 - Temporal bins correspond to 1 ms intervals across 0–550 ms.  
 - Reveals time-locked firing dynamics and category selectivity.
 
-#### **Fano Factor Analysis**
-- Quantifies trial-to-trial variability:
-  \[
-  F = \frac{\mathrm{Var}(N)}{\mathbb{E}(N)}
-  \]
+**Fano Factor Analysis**  
+- Quantifies trial-to-trial variability:  
+  - F = Var(N) / Mean(N)  
 - Mean-Matched Fano Factor (MMFF) corrects for rate differences across conditions.  
-- \( F > 1 \): variable / irregular firing; \( F < 1 \): reliable responses.
+- F > 1 → variable / irregular firing; F < 1 → reliable responses.
 
-#### **Mutual Information (MI)**
-- Measures dependency between spike counts and stimulus categories:
-  \[
-  I(S;R) = \sum_{s,r} p(s,r) \log_2 \frac{p(s,r)}{p(s)p(r)}
-  \]
+**Mutual Information (MI)**  
+- Measures dependency between spike counts and stimulus categories:  
+  - I(S;R) = Σ p(s,r) * log2( p(s,r) / (p(s)*p(r)) )  
 - Computed across time to quantify information flow dynamics.  
 - Permutation tests identify statistically significant periods.
 
-#### **d′ (Discriminability Index)**
-- Quantifies separability between response distributions to two stimuli:
-  \[
-  d′ = \frac{μ_1 - μ_2}{\sqrt{0.5(σ_1^2 + σ_2^2)}}
-  \]
+**d′ (Discriminability Index)**  
+- Quantifies separability between response distributions to two stimuli:  
+  - d′ = (μ1 − μ2) / sqrt(0.5 * (σ1² + σ2²))  
 - High |d′| indicates stronger selectivity.
 
 ---
 
 ### 3️⃣ Population-Level Decoding
 
-#### **Support Vector Machine (SVM) Classification**
+**Support Vector Machine (SVM) Classification**  
 - Spike counts (100–300 ms post-stimulus) used as features.  
 - Category labels (Face, Body, Natural, Artificial) as targets.  
 - Uses one-vs-rest multiclass SVM with 5-fold cross-validation.  
 - Outputs:
-  - Overall accuracy
+  - Overall accuracy  
   - Per-category recall and confusion matrix
 
-#### **Time–Time Decoding**
+**Time–Time Decoding**  
 - Train an SVM at each time point, test across all others.  
 - Produces a 2D matrix showing generalization over time.  
 - Diagonal structure ⇒ feedforward coding  
@@ -122,38 +114,34 @@ Extract and isolate single-neuron spike trains from extracellular voltage record
 
 ### 4️⃣ Representational Geometry Analysis
 
-#### **Representational Dissimilarity Matrix (RDM)**
+**Representational Dissimilarity Matrix (RDM)**  
 - Each cell = dissimilarity (1 − correlation) between population response vectors for two stimuli.  
 - Constructed over time to reveal category structure evolution.  
-- Compare neural RDMs to:
+- Compare neural RDMs to:  
   - Ground truth categorical RDM  
   - Visual feature RDMs (e.g., CNN embeddings)
 
-#### **Kendall’s Tau Correlation**
+**Kendall’s Tau Correlation**  
 - Correlates neural RDM and ground-truth RDM across time.  
 - Indicates when category structure is best represented in population activity.
 
-#### **Generalized Linear Model (GLM)**
-- Predict ground-truth RDM from neural and visual RDMs:
-  \[
-  Y_{gt} = \beta_0 + \beta_1 X_{neural} + \beta_2 X_{visual} + \epsilon
-  \]
+**Generalized Linear Model (GLM)**  
+- Predict ground-truth RDM from neural and visual RDMs:  
+  - Y_gt = β0 + β1 * X_neural + β2 * X_visual + ε  
 - Computes time-resolved R² to quantify contribution of neural vs visual structure.
 
 ---
 
 ### 5️⃣ Oscillatory and Spectral Analyses
 
-#### **Phase-Amplitude Coupling (PAC)**
-- Measures interaction between phase of low-frequency oscillations and amplitude of high-frequency activity:
-  \[
-  PAC(f_L, f_H) = \langle A(f_H) \cdot \cos(\theta(f_L)) \rangle
-  \]
-- Computed using [**Tensorpac**](https://github.com/EtienneCmb/tensorpac):
-  - Method 1: Modulation Index (MI)
+**Phase-Amplitude Coupling (PAC)**  
+- Measures interaction between phase of low-frequency oscillations and amplitude of high-frequency activity:  
+  - PAC(fL, fH) = mean( A(fH) * cos( phase(fL) ) )  
+- Computed using [**Tensorpac**](https://github.com/EtienneCmb/tensorpac):  
+  - Method 1: Modulation Index (MI)  
   - Method 2: Canolty Method
 
-#### **Spectral Power Analysis**
+**Spectral Power Analysis**  
 - Fourier-based power spectra computed per stimulus category.  
 - Identifies frequency-specific activity and category-dependent differences.
 
